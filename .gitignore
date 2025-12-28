@@ -1,0 +1,29 @@
+# Build artifacts
+build/
+*.o
+*.a
+.claude/
+CLAUDE.md
+PLAN.md
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Runtime data
+~/.netpulse/
+
+# Logs
+*.log
