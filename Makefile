@@ -2,7 +2,7 @@
 # Works on macOS and Linux
 
 CC = gcc
-CFLAGS = -std=c17 -D_POSIX_C_SOURCE=200809L -D_DEFAULT_SOURCE -Wall -Wextra -pedantic -g
+CFLAGS = -std=c17 -Wall -Wextra -pedantic -g
 LDFLAGS =
 
 # Platform detection
@@ -10,7 +10,7 @@ UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S),Darwin)
     CFLAGS += -DPLATFORM_MACOS
 else
-    CFLAGS += -DPLATFORM_LINUX
+    CFLAGS += -DPLATFORM_LINUX -D_POSIX_C_SOURCE=200809L -D_DEFAULT_SOURCE
     LDFLAGS += -lpthread
 endif
 
