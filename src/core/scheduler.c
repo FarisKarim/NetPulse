@@ -1,8 +1,10 @@
 #include "core/scheduler.h"
 #include "net/tcp_probe.h"
+#include "net/icmp_probe.h"
 #include "platform/platform.h"
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 static sample_callback_t g_sample_cb = NULL;
 static void *g_sample_ctx = NULL;
@@ -39,6 +41,20 @@ int scheduler_init(scheduler_t *sched, config_t *config) {
     sched->running = true;
     sched->start_time_ms = now_ms();
     sched->last_metrics_update_ms = 0;
+    sched->icmp_available = false;
+
+    // Initialize ICMP probe state if ICMP mode is requested
+    if (config->probe_type == PROBE_TYPE_ICMP) {
+        if (icmp_probe_init(&sched->icmp_state) == 0) {
+            sched->icmp_available = true;
+            printf("[scheduler] ICMP probing enabled\n");
+        } else {
+            printf("[scheduler] ICMP probing not available: %s\n",
+                   icmp_probe_unavailable_reason());
+            printf("[scheduler] Falling back to TCP probing\n");
+            config->probe_type = PROBE_TYPE_TCP;
+        }
+    }
 
     if (event_log_init(&sched->event_log) != 0) {
         return -1;
@@ -57,6 +73,11 @@ void scheduler_free(scheduler_t *sched) {
         if (sched->targets[i].probe_fd >= 0) {
             tcp_probe_cleanup(sched->targets[i].probe_fd);
         }
+    }
+
+    // Clean up ICMP state
+    if (sched->icmp_available) {
+        icmp_probe_cleanup(&sched->icmp_state);
     }
 
     event_log_free(&sched->event_log);
@@ -125,6 +146,32 @@ static void handle_probe_complete(scheduler_t *sched, target_state_t *ts, bool s
     ts->next_probe_ms = now + sched->config->probe_interval_ms;
 }
 
+// Perform ICMP probe (blocking with internal timeout)
+static void do_icmp_probe(scheduler_t *sched, target_state_t *ts) {
+    double rtt = icmp_probe_ping(&sched->icmp_state, ts->config.host,
+                                  (int)sched->config->probe_timeout_ms);
+    if (rtt >= 0) {
+        handle_probe_complete(sched, ts, true, rtt);
+    } else {
+        handle_probe_complete(sched, ts, false, 0.0);
+    }
+}
+
+// Perform TCP probe start (non-blocking)
+static void do_tcp_probe_start(scheduler_t *sched, target_state_t *ts) {
+    int fd = tcp_probe_start(ts->config.host, ts->config.port);
+    uint64_t now = now_ms();
+
+    if (fd >= 0) {
+        ts->probe_fd = fd;
+        ts->probe_start_ms = now;
+        ts->probe_state = PROBE_STATE_CONNECTING;
+    } else {
+        // DNS or socket error - record as failure
+        handle_probe_complete(sched, ts, false, 0.0);
+    }
+}
+
 int scheduler_tick(scheduler_t *sched) {
     if (sched == NULL || !sched->running) {
         return 1000;
@@ -132,6 +179,7 @@ int scheduler_tick(scheduler_t *sched) {
 
     uint64_t now = now_ms();
     int min_timeout = 1000; // Default 1 second
+    bool use_icmp = (sched->config->probe_type == PROBE_TYPE_ICMP && sched->icmp_available);
 
     // Process each target
     for (int i = 0; i < sched->target_count; i++) {
@@ -141,14 +189,12 @@ int scheduler_tick(scheduler_t *sched) {
             case PROBE_STATE_IDLE:
                 // Check if it's time to start a new probe
                 if (now >= ts->next_probe_ms) {
-                    int fd = tcp_probe_start(ts->config.host, ts->config.port);
-                    if (fd >= 0) {
-                        ts->probe_fd = fd;
-                        ts->probe_start_ms = now;
-                        ts->probe_state = PROBE_STATE_CONNECTING;
+                    if (use_icmp) {
+                        // ICMP probe is blocking
+                        do_icmp_probe(sched, ts);
                     } else {
-                        // DNS or socket error - record as failure
-                        handle_probe_complete(sched, ts, false, 0.0);
+                        // TCP probe is non-blocking
+                        do_tcp_probe_start(sched, ts);
                     }
                 } else {
                     int wait = (int)(ts->next_probe_ms - now);
@@ -159,6 +205,7 @@ int scheduler_tick(scheduler_t *sched) {
                 break;
 
             case PROBE_STATE_CONNECTING: {
+                // Only TCP probe uses this state
                 uint64_t elapsed = now - ts->probe_start_ms;
                 int remaining = (int)(sched->config->probe_timeout_ms - elapsed);
 

@@ -9,9 +9,14 @@ LDFLAGS =
 UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S),Darwin)
     CFLAGS += -DPLATFORM_MACOS
+    # macOS: use stub ICMP implementation
+    ICMP_SRC = src/net/icmp_probe_stub.c
 else
     CFLAGS += -DPLATFORM_LINUX -D_POSIX_C_SOURCE=200809L -D_DEFAULT_SOURCE
+    CFLAGS += -DHAS_ICMP_PROBE
     LDFLAGS += -lpthread
+    # Linux: use real ICMP implementation
+    ICMP_SRC = src/net/icmp_probe_linux.c
 endif
 
 # Mongoose configuration
@@ -31,6 +36,7 @@ SRCS = src/main.c \
        src/core/scheduler.c \
        src/net/dns.c \
        src/net/tcp_probe.c \
+       $(ICMP_SRC) \
        src/server/server.c \
        src/server/http_handlers.c \
        src/server/ws_handlers.c \

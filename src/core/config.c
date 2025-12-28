@@ -42,6 +42,7 @@ void config_init(config_t *cfg) {
     cfg->probe_interval_ms = DEFAULT_PROBE_INTERVAL_MS;
     cfg->probe_timeout_ms = DEFAULT_PROBE_TIMEOUT_MS;
     cfg->http_port = HTTP_WS_PORT;
+    cfg->probe_type = PROBE_TYPE_TCP;  // Default to TCP (works everywhere)
 
     cfg->thresholds.loss_pct = DEFAULT_LOSS_THRESHOLD;
     cfg->thresholds.p95_ms = DEFAULT_P95_THRESHOLD;

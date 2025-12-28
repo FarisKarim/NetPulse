@@ -7,6 +7,7 @@
 #include "core/stats.h"
 #include "core/ring_buffer.h"
 #include "core/event_log.h"
+#include "net/icmp_probe.h"
 
 /*
  * Probe state for a single target
@@ -43,6 +44,8 @@ typedef struct {
     uint64_t last_metrics_update_ms;
     uint64_t start_time_ms;
     bool running;
+    icmp_probe_state_t icmp_state;   // ICMP probe state (shared across targets)
+    bool icmp_available;              // Whether ICMP probing was successfully initialized
 } scheduler_t;
 
 // Initialize scheduler

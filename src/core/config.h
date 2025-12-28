@@ -21,6 +21,14 @@
 #define MAX_HOST_LEN                256
 
 /*
+ * Probe type selection
+ */
+typedef enum {
+    PROBE_TYPE_TCP,     // TCP connect timing (default, works everywhere)
+    PROBE_TYPE_ICMP,    // ICMP Echo (Linux only, requires CAP_NET_RAW)
+} probe_type_t;
+
+/*
  * Threshold configuration for "bad minute" detection
  */
 typedef struct {
@@ -47,6 +55,7 @@ typedef struct {
     uint32_t probe_interval_ms;
     uint32_t probe_timeout_ms;
     uint16_t http_port;
+    probe_type_t probe_type;
     thresholds_t thresholds;
     target_config_t targets[MAX_TARGETS];
     int target_count;
