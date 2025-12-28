@@ -65,6 +65,18 @@ void server_broadcast_ws(server_t *srv, const char *msg, size_t len) {
     }
 }
 
+void server_broadcast_targets_updated(server_t *srv) {
+    if (srv == NULL) {
+        return;
+    }
+
+    char buf[8192];
+    int len = ws_build_targets_updated_msg(buf, sizeof(buf), srv->config, srv->scheduler);
+    if (len > 0) {
+        server_broadcast_ws(srv, buf, (size_t)len);
+    }
+}
+
 static void server_event_handler(struct mg_connection *c, int ev, void *ev_data) {
     if (g_server == NULL) {
         return;
@@ -79,7 +91,7 @@ static void server_event_handler(struct mg_connection *c, int ev, void *ev_data)
                 mg_ws_upgrade(c, hm, NULL);
             } else {
                 // Handle HTTP request
-                http_handle_request(c, hm, g_server->config, g_server->scheduler, g_server->start_time_ms);
+                http_handle_request(c, hm, g_server->config, g_server->scheduler, g_server, g_server->start_time_ms);
             }
             break;
         }

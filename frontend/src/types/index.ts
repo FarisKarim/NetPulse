@@ -55,4 +55,5 @@ export type WSMessage =
   | { type: 'sample'; target_id: string; ts: number; rtt_ms: number; success: boolean }
   | { type: 'metrics'; target_id: string; metrics: Metrics }
   | { type: 'event'; ts: number; target_id: string; reason: string; details: Record<string, number> }
-  | { type: 'config_updated'; config: Config };
+  | { type: 'config_updated'; config: Config }
+  | { type: 'targets_updated'; targets: Target[]; config: Config };

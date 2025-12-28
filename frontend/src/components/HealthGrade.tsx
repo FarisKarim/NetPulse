@@ -72,7 +72,7 @@ function calculateGrade(targets: Target[], thresholds?: Thresholds): GradeInfo {
       const ratio = value / threshold;
       if (ratio > 1) {
         redCount++;
-      } else if (ratio > 0.8) {
+      } else if (ratio > 0.9) {
         yellowCount++;
       }
     }
@@ -121,14 +121,14 @@ export function HealthGrade({ targets, thresholds }: HealthGradeProps) {
   const { grade, color, bgColor, message } = calculateGrade(targets, thresholds);
 
   return (
-    <div className={`${bgColor} rounded-lg p-4 mb-6 border border-slate-700`}>
-      <div className="flex items-center gap-4">
-        <div className={`text-5xl font-bold ${color}`}>
-          {grade}
+    <div className="flex justify-end mb-6">
+      <div className="flex items-center gap-3">
+        <div className={`${bgColor} w-14 h-14 rounded-full border border-slate-700 flex items-center justify-center`}>
+          <span className={`text-2xl font-bold ${color}`}>{grade}</span>
         </div>
-        <div>
-          <h2 className="text-white font-semibold text-lg">Network Health</h2>
-          <p className="text-slate-400 text-sm">{message}</p>
+        <div className="text-right">
+          <p className="text-slate-400 text-xs">{message}</p>
+          <p className="text-slate-500 text-[10px]">last 60s</p>
         </div>
       </div>
     </div>

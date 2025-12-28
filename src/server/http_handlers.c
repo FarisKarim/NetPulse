@@ -1,4 +1,5 @@
 #include "server/http_handlers.h"
+#include "server/server.h"
 #include "platform/platform.h"
 #include <stdio.h>
 #include <string.h>
@@ -152,7 +153,8 @@ void http_handle_post_config(struct mg_connection *c, struct mg_http_message *hm
 }
 
 void http_handle_post_targets(struct mg_connection *c, struct mg_http_message *hm,
-                              config_t *config, scheduler_t *scheduler) {
+                              config_t *config, scheduler_t *scheduler,
+                              server_t *server) {
     const char *json = hm->body.buf;
     size_t json_len = hm->body.len;
 
@@ -184,6 +186,9 @@ void http_handle_post_targets(struct mg_connection *c, struct mg_http_message *h
         // Sync scheduler
         scheduler_sync_targets(scheduler);
 
+        // Broadcast targets update to all WebSocket clients
+        server_broadcast_targets_updated(server);
+
         mg_http_reply(c, 200, "Content-Type: application/json\r\n",
                       "{\"ok\":true,\"target_id\":\"%s\"}\n",
                       config->targets[idx].id);
@@ -207,6 +212,9 @@ void http_handle_post_targets(struct mg_connection *c, struct mg_http_message *h
         // Sync scheduler
         scheduler_sync_targets(scheduler);
 
+        // Broadcast targets update to all WebSocket clients
+        server_broadcast_targets_updated(server);
+
         mg_http_reply(c, 200, "Content-Type: application/json\r\n",
                       "{\"ok\":true}\n");
 
@@ -217,7 +225,8 @@ void http_handle_post_targets(struct mg_connection *c, struct mg_http_message *h
 }
 
 void http_handle_request(struct mg_connection *c, struct mg_http_message *hm,
-                         config_t *config, scheduler_t *scheduler, uint64_t start_time_ms) {
+                         config_t *config, scheduler_t *scheduler,
+                         server_t *server, uint64_t start_time_ms) {
 
     if (mg_match(hm->uri, mg_str("/api/health"), NULL)) {
         http_handle_health(c, start_time_ms);
@@ -231,7 +240,7 @@ void http_handle_request(struct mg_connection *c, struct mg_http_message *hm,
         }
     } else if (mg_match(hm->uri, mg_str("/api/targets"), NULL)) {
         if (mg_strcmp(hm->method, mg_str("POST")) == 0) {
-            http_handle_post_targets(c, hm, config, scheduler);
+            http_handle_post_targets(c, hm, config, scheduler, server);
         } else {
             mg_http_reply(c, 405, "", "Method not allowed\n");
         }

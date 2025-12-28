@@ -75,6 +75,10 @@ class WebSocketClient {
       case 'config_updated':
         store.updateConfig(message.config);
         break;
+
+      case 'targets_updated':
+        store.setTargets(message.targets, message.config);
+        break;
     }
   }
 

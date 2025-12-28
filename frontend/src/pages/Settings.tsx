@@ -99,6 +99,39 @@ export function Settings() {
 
   const targetList = Array.from(targets.values());
 
+  // Common preset targets
+  const presetTargets = [
+    { host: '1.1.1.1', port: 443, label: 'Cloudflare' },
+    { host: '8.8.8.8', port: 443, label: 'Google' },
+    { host: '9.9.9.9', port: 443, label: 'Quad9' },
+    { host: '208.67.222.222', port: 443, label: 'OpenDNS' },
+    { host: '1.0.0.1', port: 443, label: 'Cloudflare Secondary' },
+    { host: '8.8.4.4', port: 443, label: 'Google Secondary' },
+    { host: '101.101.101.101', port: 443, label: 'Twnic (Taiwan)' },
+  ];
+
+  // Filter out presets that are already added
+  const existingHosts = new Set(targetList.map(t => t.host));
+  const availablePresets = presetTargets.filter(p => !existingHosts.has(p.host));
+
+  const handleAddPreset = async (preset: typeof presetTargets[0]) => {
+    setAddingTarget(true);
+    setMessage('');
+
+    try {
+      const result = await addTarget(preset.host, preset.port, preset.label);
+      if (result.ok) {
+        setMessage(`Target "${preset.label}" added!`);
+      } else {
+        setMessage(result.error || 'Failed to add target');
+      }
+    } catch {
+      setMessage('Failed to add target');
+    } finally {
+      setAddingTarget(false);
+    }
+  };
+
   return (
     <div className="p-6 max-w-2xl">
       <h1 className="text-2xl font-bold text-white mb-6">Settings</h1>
@@ -232,8 +265,29 @@ export function Settings() {
           ))}
         </div>
 
+        {/* Quick Add Presets */}
+        {availablePresets.length > 0 && (
+          <div className="border-t border-slate-700 pt-4 mb-4">
+            <h3 className="text-sm font-medium text-slate-300 mb-3">Quick Add</h3>
+            <div className="flex flex-wrap gap-2">
+              {availablePresets.map((preset) => (
+                <button
+                  key={preset.host}
+                  onClick={() => handleAddPreset(preset)}
+                  disabled={addingTarget}
+                  className="bg-slate-700 hover:bg-slate-600 disabled:bg-slate-800 disabled:text-slate-500 text-white px-3 py-1.5 rounded text-sm transition-colors flex items-center gap-1.5"
+                >
+                  <span className="text-green-400">+</span>
+                  {preset.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Custom Target Form */}
         <div className="border-t border-slate-700 pt-4">
-          <h3 className="text-sm font-medium text-slate-300 mb-3">Add New Target</h3>
+          <h3 className="text-sm font-medium text-slate-300 mb-3">Add Custom Target</h3>
 
           <div className="grid grid-cols-3 gap-2 mb-2">
             <input

@@ -12,7 +12,7 @@
 #define DEFAULT_PROBE_TIMEOUT_MS    1500
 #define DEFAULT_WINDOW_SIZE         120     // 60s at 500ms interval
 #define DEFAULT_LOSS_THRESHOLD      5.0     // percent
-#define DEFAULT_P95_THRESHOLD       100.0   // ms
+#define DEFAULT_P95_THRESHOLD       125.0   // ms
 #define DEFAULT_JITTER_THRESHOLD    20.0    // ms
 #define BAD_CONDITION_DURATION_S    10      // seconds before emitting event
 #define HTTP_WS_PORT                7331

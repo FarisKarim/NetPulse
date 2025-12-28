@@ -30,6 +30,9 @@ void server_poll(server_t *srv, int timeout_ms);
 // Broadcast message to all WebSocket clients
 void server_broadcast_ws(server_t *srv, const char *msg, size_t len);
 
+// Broadcast targets updated message to all WebSocket clients
+void server_broadcast_targets_updated(server_t *srv);
+
 // Wire up scheduler callbacks to broadcast via WebSocket
 void server_setup_callbacks(server_t *srv, scheduler_t *sched);
 

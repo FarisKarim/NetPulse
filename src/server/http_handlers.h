@@ -4,6 +4,7 @@
 #include "mongoose.h"
 #include "core/config.h"
 #include "core/scheduler.h"
+#include "server/server.h"
 
 /*
  * HTTP API handlers
@@ -11,7 +12,8 @@
 
 // Handle HTTP request routing
 void http_handle_request(struct mg_connection *c, struct mg_http_message *hm,
-                         config_t *config, scheduler_t *scheduler, uint64_t start_time_ms);
+                         config_t *config, scheduler_t *scheduler,
+                         server_t *server, uint64_t start_time_ms);
 
 // GET /api/health
 void http_handle_health(struct mg_connection *c, uint64_t start_time_ms);
@@ -25,6 +27,7 @@ void http_handle_post_config(struct mg_connection *c, struct mg_http_message *hm
 
 // POST /api/targets
 void http_handle_post_targets(struct mg_connection *c, struct mg_http_message *hm,
-                              config_t *config, scheduler_t *scheduler);
+                              config_t *config, scheduler_t *scheduler,
+                              server_t *server);
 
 #endif // NETPULSE_HTTP_HANDLERS_H

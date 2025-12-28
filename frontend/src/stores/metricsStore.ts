@@ -9,6 +9,7 @@ interface MetricsState {
 
   // Actions
   setSnapshot: (targets: Target[], config: Config) => void;
+  setTargets: (targets: Target[], config: Config) => void;
   addSample: (targetId: string, sample: Sample) => void;
   updateMetrics: (targetId: string, metrics: Metrics) => void;
   addEvent: (event: NetEvent) => void;
@@ -29,6 +30,24 @@ export const useMetricsStore = create<MetricsState>((set) => ({
     const targetMap = new Map<string, Target>();
     for (const target of targets) {
       targetMap.set(target.id, target);
+    }
+    return { targets: targetMap, config };
+  }),
+
+  setTargets: (targets, config) => set((state) => {
+    const targetMap = new Map<string, Target>();
+    for (const target of targets) {
+      // Preserve existing samples if we have them
+      const existing = state.targets.get(target.id);
+      if (existing) {
+        targetMap.set(target.id, {
+          ...target,
+          samples: existing.samples,
+          metrics: existing.metrics,
+        });
+      } else {
+        targetMap.set(target.id, target);
+      }
     }
     return { targets: targetMap, config };
   }),

@@ -142,3 +142,53 @@ int ws_build_event_msg(char *buf, size_t buf_size, const event_t *event) {
                     event->threshold,
                     event->duration_s);
 }
+
+int ws_build_targets_updated_msg(char *buf, size_t buf_size, config_t *config, scheduler_t *scheduler) {
+    int pos = 0;
+
+    pos += snprintf(buf + pos, buf_size - pos,
+                    "{\"type\":\"targets_updated\",\"targets\":[");
+
+    for (int i = 0; i < scheduler->target_count; i++) {
+        target_state_t *ts = &scheduler->targets[i];
+
+        if (i > 0) {
+            pos += snprintf(buf + pos, buf_size - pos, ",");
+        }
+
+        pos += snprintf(buf + pos, buf_size - pos,
+                        "{\"id\":\"%s\",\"host\":\"%s\",\"port\":%u,\"label\":\"%s\","
+                        "\"metrics\":{"
+                        "\"current_rtt_ms\":%.2f,"
+                        "\"max_rtt_ms\":%.2f,"
+                        "\"loss_pct\":%.2f,"
+                        "\"jitter_ms\":%.2f,"
+                        "\"p50_ms\":%.2f,"
+                        "\"p95_ms\":%.2f"
+                        "},\"samples\":[]}",
+                        ts->config.id, ts->config.host, ts->config.port, ts->config.label,
+                        ts->metrics.current_rtt_ms,
+                        ts->metrics.max_rtt_ms,
+                        ts->metrics.loss_pct,
+                        ts->metrics.jitter_ms,
+                        ts->metrics.p50_ms,
+                        ts->metrics.p95_ms);
+    }
+
+    pos += snprintf(buf + pos, buf_size - pos,
+                    "],\"config\":{"
+                    "\"probe_interval_ms\":%u,"
+                    "\"probe_timeout_ms\":%u,"
+                    "\"thresholds\":{"
+                    "\"loss_pct\":%.1f,"
+                    "\"p95_ms\":%.1f,"
+                    "\"jitter_ms\":%.1f"
+                    "}}}",
+                    config->probe_interval_ms,
+                    config->probe_timeout_ms,
+                    config->thresholds.loss_pct,
+                    config->thresholds.p95_ms,
+                    config->thresholds.jitter_ms);
+
+    return pos;
+}

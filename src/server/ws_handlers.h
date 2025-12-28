@@ -32,4 +32,7 @@ int ws_build_metrics_msg(char *buf, size_t buf_size, const char *target_id, cons
 // Build event message JSON
 int ws_build_event_msg(char *buf, size_t buf_size, const event_t *event);
 
+// Build targets updated message JSON (for add/remove notifications)
+int ws_build_targets_updated_msg(char *buf, size_t buf_size, config_t *config, scheduler_t *scheduler);
+
 #endif // NETPULSE_WS_HANDLERS_H
