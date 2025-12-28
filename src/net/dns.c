@@ -1,3 +1,5 @@
+#define _POSIX_C_SOURCE 200809L
+
 #include "net/dns.h"
 #include <stdio.h>
 #include <string.h>

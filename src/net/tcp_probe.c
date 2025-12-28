@@ -1,3 +1,5 @@
+#define _POSIX_C_SOURCE 200809L
+
 #include "net/tcp_probe.h"
 #include "net/dns.h"
 #include "platform/platform.h"
