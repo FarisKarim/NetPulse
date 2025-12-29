@@ -49,9 +49,14 @@ OBJS = $(patsubst %.c,$(OBJDIR)/%.o,$(SRCS))
 # Output
 TARGET = build/netpulsed
 
-.PHONY: all clean
+.PHONY: all clean debug
 
 all: $(TARGET)
+
+# Debug build with resource monitoring (logs FD count and RSS every 10s)
+debug: CFLAGS += -DDEBUG_RESOURCES
+debug: clean $(TARGET)
+	@echo "Debug build complete with resource monitoring enabled"
 
 $(TARGET): $(OBJS)
 	@mkdir -p $(dir $@)

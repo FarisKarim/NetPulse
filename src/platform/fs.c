@@ -109,3 +109,76 @@ char *get_data_dir(void) {
 
     return home;
 }
+
+/*
+ * Debug resource monitoring
+ */
+
+#ifdef DEBUG_RESOURCES
+
+#include <stdio.h>
+#include <dirent.h>
+
+#ifdef PLATFORM_LINUX
+#include <sys/resource.h>
+#endif
+
+void debug_log_resources(const char *label) {
+    int fd_count = 0;
+
+#ifdef PLATFORM_LINUX
+    // Count open FDs via /proc/self/fd
+    DIR *dir = opendir("/proc/self/fd");
+    if (dir != NULL) {
+        while (readdir(dir) != NULL) {
+            fd_count++;
+        }
+        closedir(dir);
+        fd_count -= 2;  // Subtract . and ..
+    }
+
+    // Get memory usage from /proc/self/status
+    long rss_kb = 0;
+    FILE *status = fopen("/proc/self/status", "r");
+    if (status != NULL) {
+        char line[256];
+        while (fgets(line, sizeof(line), status)) {
+            if (strncmp(line, "VmRSS:", 6) == 0) {
+                sscanf(line + 6, "%ld", &rss_kb);
+                break;
+            }
+        }
+        fclose(status);
+    }
+
+    printf("[DEBUG] %s: FDs=%d, RSS=%ld KB\n", label, fd_count, rss_kb);
+
+#elif defined(PLATFORM_MACOS)
+    // macOS: count FDs by iterating possible range
+    struct stat st;
+    for (int i = 0; i < 1024; i++) {
+        if (fstat(i, &st) == 0) {
+            fd_count++;
+        }
+    }
+
+    // RSS via getrusage
+    struct rusage usage;
+    long rss_kb = 0;
+    if (getrusage(RUSAGE_SELF, &usage) == 0) {
+        rss_kb = usage.ru_maxrss / 1024;  // macOS reports bytes
+    }
+
+    printf("[DEBUG] %s: FDs=%d, RSS=%ld KB\n", label, fd_count, rss_kb);
+#else
+    (void)label;
+    (void)fd_count;
+#endif
+}
+
+#else
+// No-op when DEBUG_RESOURCES not defined
+void debug_log_resources(const char *label) {
+    (void)label;
+}
+#endif

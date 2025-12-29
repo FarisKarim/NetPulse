@@ -38,4 +38,12 @@ char *expand_home_path(const char *path);
 // Returns NULL on error.
 char *get_data_dir(void);
 
+/*
+ * Debug utilities (compile with -DDEBUG_RESOURCES to enable)
+ */
+
+// Log current FD count and memory usage (if available)
+// No-op unless DEBUG_RESOURCES is defined
+void debug_log_resources(const char *label);
+
 #endif // NETPULSE_PLATFORM_H

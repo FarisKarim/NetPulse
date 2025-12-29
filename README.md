@@ -111,9 +111,15 @@ Default targets: Cloudflare (1.1.1.1:443) and Google (8.8.8.8:443)
 
 Add custom targets via the Settings page or API:
 ```bash
+# Add a target (ID is auto-generated from label)
 curl -X POST http://localhost:7331/api/targets \
   -H "Content-Type: application/json" \
-  -d '{"action":"add","id":"custom","label":"My Server","host":"example.com","port":443}'
+  -d '{"action":"add","label":"My Server","host":"example.com","port":443}'
+
+# Remove a target (use target_id from the add response or /api/config)
+curl -X POST http://localhost:7331/api/targets \
+  -H "Content-Type: application/json" \
+  -d '{"action":"remove","target_id":"my-server"}'
 ```
 
 ## Metrics
@@ -122,6 +128,17 @@ curl -X POST http://localhost:7331/api/targets \
 - **Packet Loss**: Percentage of failed probes (120-sample window)
 - **Jitter**: Mean absolute deviation between consecutive RTTs
 - **P50/P95**: 50th and 95th percentile latency
+
+## Debug Build
+
+Build with resource monitoring to detect leaks during development:
+
+```bash
+make debug
+./build/netpulsed
+```
+
+Logs FD count and RSS every 10 seconds. Healthy: FDs stable at 4-6, RSS stable at 4-8 MB.
 
 ## Linux/Gitpod Setup
 

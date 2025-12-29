@@ -57,10 +57,23 @@ int scheduler_init(scheduler_t *sched, config_t *config) {
     }
 
     if (event_log_init(&sched->event_log) != 0) {
+        if (sched->icmp_available) {
+            icmp_probe_cleanup(&sched->icmp_state);
+            sched->icmp_available = false;
+        }
         return -1;
     }
 
-    return scheduler_sync_targets(sched);
+    int sync_result = scheduler_sync_targets(sched);
+    if (sync_result != 0) {
+        // Clean up on sync failure
+        event_log_free(&sched->event_log);
+        if (sched->icmp_available) {
+            icmp_probe_cleanup(&sched->icmp_state);
+            sched->icmp_available = false;
+        }
+    }
+    return sync_result;
 }
 
 void scheduler_free(scheduler_t *sched) {
@@ -112,6 +125,11 @@ int scheduler_sync_targets(scheduler_t *sched) {
         ts->config = sched->config->targets[i];
 
         if (ring_buffer_init(&ts->samples, sizeof(sample_t), DEFAULT_WINDOW_SIZE) != 0) {
+            // Clean up already-initialized targets on failure
+            for (int j = 0; j < sched->target_count; j++) {
+                ring_buffer_free(&sched->targets[j].samples);
+            }
+            sched->target_count = 0;
             return -1;
         }
 
@@ -247,6 +265,13 @@ int scheduler_tick(scheduler_t *sched) {
     // Update metrics once per second
     if (now - sched->last_metrics_update_ms >= 1000) {
         sched->last_metrics_update_ms = now;
+
+        // Debug: log resource usage every 10 seconds
+        static int debug_counter = 0;
+        if (++debug_counter >= 10) {
+            debug_log_resources("scheduler_tick");
+            debug_counter = 0;
+        }
 
         for (int i = 0; i < sched->target_count; i++) {
             target_state_t *ts = &sched->targets[i];
